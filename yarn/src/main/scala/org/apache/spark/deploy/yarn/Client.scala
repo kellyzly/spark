@@ -19,6 +19,8 @@ package org.apache.spark.deploy.yarn
 
 import java.net.{InetAddress, UnknownHostException, URI, URISyntaxException}
 import java.nio.ByteBuffer
+import java.security.NoSuchAlgorithmException
+import javax.crypto.{SecretKey, KeyGenerator}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer, HashMap, ListBuffer, Map}
@@ -31,7 +33,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.mapred.Master
+import org.apache.hadoop.mapreduce.CryptoUtils
 import org.apache.hadoop.mapreduce.MRJobConfig
+import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.util.StringUtils
 import org.apache.hadoop.yarn.api._
@@ -534,10 +538,44 @@ private[spark] class Client(
     // send the acl settings into YARN to control who has access via YARN interfaces
     val securityManager = new SecurityManager(sparkConf)
     amContainer.setApplicationACLs(YarnSparkHadoopUtil.getApplicationAclsForYarn(securityManager))
+    val isEncryptedShuffle = sparkConf.getBoolean("spark.encrypted.shuffle", false)
+    if (isEncryptedShuffle) {
+      setMapShuffleTokens(credentials, amContainer)
+    }
     setupSecurityToken(amContainer)
     UserGroupInformation.getCurrentUser().addCredentials(credentials)
 
     amContainer
+  }
+
+  def setMapShuffleTokens(credentials:Credentials,amContainer:ContainerLaunchContext){
+    val conf: Configuration = SparkHadoopUtil.get.newConfiguration(sparkConf)
+    if (TokenCache.getShuffleSecretKey(credentials) == null) {
+      var keyGen: KeyGenerator = null
+      try {
+        val SHUFFLE_KEY_LENGTH: Int = 64
+        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(conf) == true) {
+          conf.getInt(MRJobConfig.MR_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
+            MRJobConfig.DEFAULT_MR_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
+        }
+        else {
+          SHUFFLE_KEY_LENGTH
+        }
+        val SHUFFLE_KEYGEN_ALGORITHM = "HmacSHA1";
+        keyGen = KeyGenerator.getInstance(SHUFFLE_KEYGEN_ALGORITHM)
+        keyGen.init(keyLen)
+      }
+      catch {
+        case e: NoSuchAlgorithmException => println("Error generating shuffle secret key")
+      }
+
+      val shuffleKey: SecretKey = keyGen.generateKey
+      TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
+    }
+    val dob: DataOutputBuffer = new DataOutputBuffer
+    credentials.writeTokenStorageToStream(dob)
+    val securityTokens: ByteBuffer = ByteBuffer.wrap(dob.getData, 0, dob.getLength)
+    amContainer.setTokens(securityTokens)
   }
 
   /**

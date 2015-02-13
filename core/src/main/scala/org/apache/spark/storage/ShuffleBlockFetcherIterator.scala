@@ -18,12 +18,21 @@
 package org.apache.spark.storage
 
 import java.io.{InputStream, IOException}
+import java.net.URL
+import java.nio.ByteBuffer
 import java.util.concurrent.LinkedBlockingQueue
 
 import scala.collection.mutable.{ArrayBuffer, HashSet, Queue}
 import scala.util.{Failure, Success, Try}
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.crypto.CryptoCodec
+import org.apache.hadoop.crypto.CryptoInputStream
+import org.apache.hadoop.mapreduce.MRJobConfig
+import org.apache.hadoop.mapreduce.security.TokenCache
+
 import org.apache.spark.{Logging, TaskContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.network.BlockTransferService
 import org.apache.spark.network.shuffle.{BlockFetchingListener, ShuffleClient}
 import org.apache.spark.network.buffer.ManagedBuffer
@@ -296,15 +305,36 @@ final class ShuffleBlockFetcherIterator(
         // There is a chance that createInputStream can fail (e.g. fetching a local file that does
         // not exist, SPARK-4085). In that case, we should propagate the right exception so
         // the scheduler gets a FetchFailedException.
-        Try(buf.createInputStream()).map { is0 =>
-          val is = blockManager.wrapForCompression(blockId, is0)
-          val iter = serializer.newInstance().deserializeStream(is).asIterator
-          CompletionIterator[Any, Iterator[Any]](iter, {
-            // Once the iterator is exhausted, release the buffer and set currentResult to null
-            // so we don't release it again in cleanup.
-            currentResult = null
-            buf.release()
-          })
+        // is0:InputStream
+        Try(buf.createInputStream()).map {
+          is0 =>
+            var is: InputStream = null
+            val sparkConf = blockManager.conf
+            val isEncryptedShuffle = sparkConf.getBoolean("spark.encrypted.shuffle", false)
+            if (isEncryptedShuffle) {
+              val conf: Configuration = SparkHadoopUtil.get.newConfiguration(sparkConf)
+              val cryptoCodec: CryptoCodec = CryptoCodec.getInstance(conf)
+              val bufferSize: Int = conf.getInt(
+                MRJobConfig.MR_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB,
+                MRJobConfig.DEFAULT_MR_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB) * 1024
+              val iv: Array[Byte] = Array[Byte](0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+              is0.read(iv, 0, iv.length)
+              val streamOffset: Long = iv.length
+              val credentials = SparkHadoopUtil.get.getCurrentUserCredentials()
+              val key: Array[Byte] = TokenCache.getShuffleSecretKey(credentials)
+              var cos = new CryptoInputStream(is0, cryptoCodec, bufferSize, key,
+                iv, streamOffset)
+              is = blockManager.wrapForCompression(blockId, cos)
+            } else {
+              is = blockManager.wrapForCompression(blockId, is0)
+            }
+            val iter = serializer.newInstance().deserializeStream(is).asIterator
+            CompletionIterator[Any, Iterator[Any]](iter, {
+              // Once the iterator is exhausted, release the buffer and set currentResult to null
+              // so we don't release it again in cleanup.
+              currentResult = null
+              buf.release()
+            })
         }
     }
 
