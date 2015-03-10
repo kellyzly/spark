@@ -1,0 +1,124 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.spark.crypto
+
+import java.nio.ByteBuffer
+import javax.crypto.Cipher
+import com.google.common.base.Preconditions
+import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
+import java.io.IOException
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic._
+import java.lang.String
+import java.security.{GeneralSecurityException, SecureRandom}
+import org.apache.spark.Logging
+
+class JceAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
+
+  def getConf: Configuration = {
+    conf
+  }
+
+  def setConf(conf: Configuration) {
+    this.conf = conf
+    provider = conf.get(HADOOP_SECURITY_CRYPTO_JCE_PROVIDER_KEY)
+    val secureRandomAlg: String = conf.get(HADOOP_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY,
+      HADOOP_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT)
+    try {
+      random = if ((provider != null)) SecureRandom.getInstance(secureRandomAlg,
+        provider) else SecureRandom.getInstance(secureRandomAlg)
+    }
+    catch {
+      case e: GeneralSecurityException => {
+        logWarning(e.getMessage)
+        random = new SecureRandom
+      }
+    }
+  }
+
+  def createEncryptor: Encryptor = {
+    new JceAesCtrCipher(Cipher.ENCRYPT_MODE, provider)
+  }
+
+  def createDecryptor: Decryptor = {
+    new JceAesCtrCipher(Cipher.DECRYPT_MODE, provider)
+  }
+
+  def generateSecureRandom(bytes: Array[Byte]) {
+    random.nextBytes(bytes)
+  }
+
+  var conf: Configuration = null
+  var provider: String = null
+  var random: SecureRandom = null
+
+
+  class JceAesCtrCipher(mode: Int, provider: String) extends Encryptor with Decryptor {
+
+    var contextReset: Boolean = false
+
+    val cipher: Cipher = if (provider == null || provider.isEmpty) {
+      Cipher.getInstance(SUITE.name)
+    }
+    else {
+      Cipher.getInstance(SUITE.name, provider)
+    }
+
+    def init(key: Array[Byte], iv: Array[Byte]) {
+      Preconditions.checkNotNull(key)
+      Preconditions.checkNotNull(iv)
+      contextReset = false
+      try {
+        cipher.init(mode, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv))
+      }
+      catch {
+        case e: Exception => {
+          throw new IOException(e)
+        }
+      }
+    }
+
+    def encrypt(inBuffer: ByteBuffer, outBuffer: ByteBuffer) {
+      process(inBuffer, outBuffer)
+    }
+
+    def decrypt(inBuffer: ByteBuffer, outBuffer: ByteBuffer) {
+      process(inBuffer, outBuffer)
+    }
+
+    def process(inBuffer: ByteBuffer, outBuffer: ByteBuffer) {
+      try {
+        val inputSize: Int = inBuffer.remaining
+        val n: Int = cipher.update(inBuffer, outBuffer)
+        if (n < inputSize) {
+          contextReset = true
+          cipher.doFinal(inBuffer, outBuffer)
+        }
+      }
+      catch {
+        case e: Exception => {
+          throw new IOException(e)
+        }
+      }
+    }
+
+    def isContextReset: Boolean = {
+      contextReset
+    }
+  }
+}
+

@@ -38,6 +38,7 @@ import org.apache.spark.network.shuffle.{BlockFetchingListener, ShuffleClient}
 import org.apache.spark.network.buffer.ManagedBuffer
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.util.{CompletionIterator, Utils}
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
 
 /**
  * An iterator that fetches multiple blocks. For local blocks, it fetches from the local block
@@ -321,7 +322,8 @@ final class ShuffleBlockFetcherIterator(
               is0.read(iv, 0, iv.length)
               val streamOffset: Long = iv.length
               val credentials = SparkHadoopUtil.get.getCurrentUserCredentials()
-              val key: Array[Byte] = TokenCache.getShuffleSecretKey(credentials)
+             // val key: Array[Byte] = TokenCache.getShuffleSecretKey(credentials)
+              val key: Array[Byte] = credentials.getSecretKey(SPARK_SHUFFLE_TOKEN)
               var cos = new CryptoInputStream(is0, cryptoCodec, bufferSize, key,
                 iv, streamOffset)
               is = blockManager.wrapForCompression(blockId, cos)

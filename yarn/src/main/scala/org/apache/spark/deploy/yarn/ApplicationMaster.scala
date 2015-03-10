@@ -49,6 +49,7 @@ import org.apache.spark.scheduler.cluster.YarnSchedulerBackend
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
 import org.apache.spark.util.{AkkaUtils, ChildFirstURLClassLoader, MutableURLClassLoader,
   SignalLogger, Utils}
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
 
 /**
  * Common application master functionality for Spark on Yarn.
@@ -591,7 +592,8 @@ private[spark] class ApplicationMaster(
       }
       val shuffleKey: SecretKey = keyGen.generateKey
       val credentials = SparkHadoopUtil.get.getCurrentUserCredentials
-      TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
+      //TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
+      credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded);
       SparkHadoopUtil.get.addCurrentUserCredentials(credentials)
     }
   }
