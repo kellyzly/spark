@@ -20,20 +20,16 @@ import java.nio.ByteBuffer
 import com.google.common.base.Preconditions
 import java.io.{Closeable, IOException}
 import java.lang.String
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic._
-import org.apache.hadoop.crypto.random.OsSecureRandom
 import java.util.Random
-import org.apache.hadoop.util.ReflectionUtils
 import java.security.SecureRandom
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.Logging
+import org.apache.spark.{SparkConf, Logging}
 
 /**
  * Implement the AES-CTR crypto codec using JNI into OpenSSL.
  */
 class OpensslAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
 
-  var conf: Configuration = null
+  var conf: SparkConf = null
   var random: Random = null
 
 
@@ -42,20 +38,24 @@ class OpensslAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
     throw new RuntimeException(loadingFailureReason)
   }
 
-  def setConf(conf: Configuration) {
-    this.conf = conf
-    val klass: Class[_ <: Random] = conf.getClass(HADOOP_SECURITY_SECURE_RANDOM_IMPL_KEY,
-      classOf[OsSecureRandom], classOf[Random])
-    try {
-      random = ReflectionUtils.newInstance(klass, conf)
-    }
-    catch {
-      case e: Exception => {
-        logInfo("Unable to use " + klass.getName + ".  Falling back to " + "Java SecureRandom.", e)
-        this.random = new SecureRandom
-      }
-    }
+  def setConf(conf: SparkConf) {
+//    this.conf = conf
+//    val klass: Class[_ <: Random] = conf.getClass(HADOOP_SECURITY_SECURE_RANDOM_IMPL_KEY,
+// classOf[OsSecureRandom], classOf[Random])
+//    try {
+//      random = ReflectionUtils.newInstance(klass, conf)
+//    }
+//    catch {
+//      case e: Exception => {
+//        LOG.info("Unable to use " + klass.getName + ".  Falling back to " + "Java SecureRandom
+// .", e)
+//        this.random = new SecureRandom
+//      }
+//    }
+    this.random = new SecureRandom
   }
+
+
 
   protected override def finalize {
     try {
@@ -69,7 +69,7 @@ class OpensslAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
     super.finalize
   }
 
-  def getConf: Configuration = {
+  def getConf: SparkConf = {
     conf
   }
 

@@ -21,23 +21,26 @@ import javax.crypto.Cipher
 import com.google.common.base.Preconditions
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import java.io.IOException
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic._
 import java.lang.String
 import java.security.{GeneralSecurityException, SecureRandom}
-import org.apache.spark.Logging
+import org.apache.spark.{SparkConf, Logging}
+import org.apache.spark.crypto.CommonConfigurationKeys
+.SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY
+import org.apache.spark.crypto.CommonConfigurationKeys
+.SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY
 
 class JceAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
 
-  def getConf: Configuration = {
+  def getConf: SparkConf = {
     conf
   }
 
-  def setConf(conf: Configuration) {
+  def setConf(conf: SparkConf) {
     this.conf = conf
-    provider = conf.get(HADOOP_SECURITY_CRYPTO_JCE_PROVIDER_KEY)
-    val secureRandomAlg: String = conf.get(HADOOP_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY,
-      HADOOP_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT)
+    provider = conf.get(SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY)
+    val secureRandomAlg: String = conf.get(SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY,
+      SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT)
     try {
       random = if ((provider != null)) SecureRandom.getInstance(secureRandomAlg,
         provider) else SecureRandom.getInstance(secureRandomAlg)
@@ -62,7 +65,7 @@ class JceAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
     random.nextBytes(bytes)
   }
 
-  var conf: Configuration = null
+  var conf: SparkConf = null
   var provider: String = null
   var random: SecureRandom = null
 

@@ -17,16 +17,13 @@
 package org.apache.spark.crypto
 
 import com.google.common.base.Preconditions
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Seekable
 
 import java.io.InputStream
 import java.nio.ByteBuffer
 
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic._
 import sun.nio.ch.DirectBuffer
 import sun.misc.Cleaner
-import java.lang.String
 
 
 object CryptoStreamUtils {
@@ -65,6 +62,12 @@ object CryptoStreamUtils {
       throw new RuntimeException("AES/CTR/NoPadding is required")
     }
   }
+
+//  def  getRandomDevPath():String= {
+//     System.getProperty(
+//      CRYPTOSTREAM_RANDOM_DEVICE_FILE_PATH_KEY,
+//      CRYPTOSTREAM_RANDOM_DEVICE_FILE_PATH_DEFAULT)
+//  }
 
   val MIN_BUFFER_SIZE: Int = 512
 }

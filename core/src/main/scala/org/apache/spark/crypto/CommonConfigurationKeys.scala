@@ -17,13 +17,27 @@
 package org.apache.spark.crypto
 
 import org.apache.hadoop.io.Text
+import java.lang.String
+
 /**
  *
  */
 object CommonConfigurationKeys {
-  val SPARK_SHUFFLE_TOKEN:Text = new Text("SPARK_SHUFFLE_TOKEN")
-  val SPARK_SECURITY_CRYPTO_BUFFER_SIZE_DEFAULT:Int = 8192
-  val SPARK_SECURITY_CRYPTO_CIPHER_SUITE_DEFAULT:String="AES/CTR/NoPadding";
-  val SPARK_SECURITY_CRYPTO_CIPHER_SUITE_KEY:String = "spark.security.crypto.cipher.suite"
-  val SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX:String = "spark.security.crypto.codec.classes"
+  val SPARK_SHUFFLE_TOKEN: Text = new Text("SPARK_SHUFFLE_TOKEN")
+  val SPARK_SECURITY_CRYPTO_BUFFER_SIZE_DEFAULT: Int = 8192
+  val SPARK_SECURITY_CRYPTO_CIPHER_SUITE_DEFAULT: String = "AES/CTR/NoPadding";
+  val SPARK_SECURITY_CRYPTO_CIPHER_SUITE_KEY: String = "spark.security.crypto.cipher.suite"
+  val SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX: String = "spark.security.crypto.codec.classes"
+  val SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY:String = "spark.security.crypto.jce.provider"
+  val SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY: String = "spark.security.java.secure" +
+    ".random" +
+    ".algorithm"
+  val SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT:String = "SHA1PRNG"
+  val SPARK_SECURITY_SECURE_RANDOM_IMPL_KEY:String = "spark.security.secure.random.impl"
+  val  SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB:String = "spark.job" +
+    ".encrypted-intermediate-data.buffer.kb"
+  val  DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB:Int =128
+  val SPARK_SECURITY_SECURE_RANDOM_DEVICE_FILE_PATH_KEY:String ="spark.security.random.device" +
+    ".file.path"
+  val SPARK_SECURITY_SECURE_RANDOM_DEVICE_FILE_PATH_DEFAULT:String = "/dev/urandom"
 }

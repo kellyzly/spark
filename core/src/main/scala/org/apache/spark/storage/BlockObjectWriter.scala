@@ -22,10 +22,6 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.crypto.CryptoCodec
-import org.apache.hadoop.crypto.CryptoOutputStream
-import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -33,7 +29,9 @@ import org.apache.spark.{Logging,SparkConf}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.serializer.{SerializationStream, Serializer}
 import org.apache.spark.executor.ShuffleWriteMetrics
-
+import org.apache.spark.crypto.{CryptoOutputStream, CryptoCodec}
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
+import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
 /**
  * An interface for writing JVM objects to some underlying storage. This interface allows
  * appending data to an existing block, and can guarantee atomicity in the case of faults
@@ -142,11 +140,10 @@ private[spark] class DiskBlockObjectWriter(
     fos = new FileOutputStream(file, true)
     val isEncryptedShuffle = sparkConf.getBoolean("spark.encrypted.shuffle", false)
     if (isEncryptedShuffle) {
-      val conf: Configuration = SparkHadoopUtil.get.newConfiguration(sparkConf)
-      val cryptoCodec: CryptoCodec = CryptoCodec.getInstance(conf)
-      val bufferSize: Int = conf.getInt(MRJobConfig.
-        MR_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB,
-        MRJobConfig.DEFAULT_MR_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB) * 1024
+      val cryptoCodec: CryptoCodec = CryptoCodec.getInstance(sparkConf)
+      val bufferSize: Int = sparkConf.getInt(
+        SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB,
+        DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB) * 1024
       val iv: Array[Byte] = createIV(cryptoCodec)
       val credentials = SparkHadoopUtil.get.getCurrentUserCredentials()
       val key: Array[Byte] = TokenCache.getShuffleSecretKey(credentials)
@@ -165,7 +162,7 @@ private[spark] class DiskBlockObjectWriter(
   }
 
   def createIV(cryptoCodec: CryptoCodec): Array[Byte] = {
-    val iv: Array[Byte] = new Array[Byte](cryptoCodec.getCipherSuite.getAlgorithmBlockSize)
+    val iv: Array[Byte] = new Array[Byte](cryptoCodec.getCipherSuite.algoBlockSize)
     cryptoCodec.generateSecureRandom(iv)
     iv
   }

@@ -25,10 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue
 import scala.collection.mutable.{ArrayBuffer, HashSet, Queue}
 import scala.util.{Failure, Success, Try}
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.crypto.CryptoCodec
-import org.apache.hadoop.crypto.CryptoInputStream
-import org.apache.hadoop.mapreduce.MRJobConfig
+
 import org.apache.hadoop.mapreduce.security.TokenCache
 
 import org.apache.spark.{Logging, TaskContext}
@@ -39,7 +36,10 @@ import org.apache.spark.network.buffer.ManagedBuffer
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.util.{CompletionIterator, Utils}
 import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
-
+import org.apache.spark.crypto.CryptoCodec
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
+import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
+import org.apache.spark.crypto.CryptoInputStream
 /**
  * An iterator that fetches multiple blocks. For local blocks, it fetches from the local block
  * manager. For remote blocks, it fetches them using the provided BlockTransferService.
@@ -313,11 +313,10 @@ final class ShuffleBlockFetcherIterator(
             val sparkConf = blockManager.conf
             val isEncryptedShuffle = sparkConf.getBoolean("spark.encrypted.shuffle", false)
             if (isEncryptedShuffle) {
-              val conf: Configuration = SparkHadoopUtil.get.newConfiguration(sparkConf)
-              val cryptoCodec: CryptoCodec = CryptoCodec.getInstance(conf)
-              val bufferSize: Int = conf.getInt(
-                MRJobConfig.MR_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB,
-                MRJobConfig.DEFAULT_MR_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB) * 1024
+              val cryptoCodec: CryptoCodec = CryptoCodec.getInstance(sparkConf)
+              val bufferSize: Int = sparkConf.getInt(
+                SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB,
+                DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB) * 1024
               val iv: Array[Byte] = Array[Byte](0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
               is0.read(iv, 0, iv.length)
               val streamOffset: Long = iv.length
