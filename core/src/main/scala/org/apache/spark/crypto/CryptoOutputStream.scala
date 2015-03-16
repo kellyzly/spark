@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 package org.apache.spark.crypto
+
 import java.io.{IOException, FilterOutputStream, OutputStream}
 import java.nio.ByteBuffer
 import com.google.common.base.Preconditions
 import java.security.GeneralSecurityException
+import org.apache.spark.Logging
 
 /**
  * CryptoOutputStream encrypts data. It is not thread-safe. AES CTR mode is
@@ -32,16 +34,47 @@ import java.security.GeneralSecurityException
  * The underlying stream offset is maintained as state.
  */
 class CryptoOutputStream(out: OutputStream, codecVal: CryptoCodec, bufferSizeVal: Int,
-                         keyVal: Array[Byte],ivVal: Array[Byte],streamOffsetVal: Long) extends
-FilterOutputStream(out: OutputStream) {
+                         keyVal: Array[Byte], ivVal: Array[Byte], streamOffsetVal: Long) extends
+FilterOutputStream(out: OutputStream) with Logging {
+  var codec: CryptoCodec = null
+  var encryptor: Encryptor = null
+  var bufferSize: Int = 0
+  /**
+   * Input data buffer. The data starts at inBuffer.position() and ends at
+   * inBuffer.limit().
+   */
+  var inBuffer: ByteBuffer = null
+  /**
+   * Encrypted data buffer. The data starts at outBuffer.position() and ends at
+   * outBuffer.limit();
+   */
+  var outBuffer: ByteBuffer = null
+  var streamOffset: Long = 0
+  /**
+   * Padding = pos%(algorithm blocksize); Padding is put into {@link #inBuffer}
+   * before any other data goes in. The purpose of padding is to put input data
+   * at proper position.
+   */
+  var padding: Byte = 0
+  var closed: Boolean = false
+  var key: Array[Byte] = null
+  var initIV: Array[Byte] = null
+  var iv: Array[Byte] = null
+  var tmpBuf: Array[Byte] = null
+  val oneByteBuf: Array[Byte] = new Array[Byte](1)
+
   CryptoStreamUtils.checkCodec(codecVal)
   bufferSize = CryptoStreamUtils.checkBufferSize(codecVal, bufferSizeVal)
   codec = codecVal
   key = keyVal.clone
   initIV = ivVal.clone
   iv = ivVal.clone
-  inBuffer = ByteBuffer.allocateDirect(bufferSizeVal)
-  outBuffer = ByteBuffer.allocateDirect(bufferSizeVal)
+  inBuffer = ByteBuffer.allocateDirect(bufferSize)
+  var inBufferNotNull: Boolean = (inBuffer != null)
+  logInfo(s"line 73 inBuffer is not null $inBufferNotNull")
+  outBuffer = ByteBuffer.allocateDirect(bufferSize)
+  var outBufferNotNull: Boolean = (outBuffer != null)
+  logInfo(s"outBuffer is not null $outBufferNotNull")
   streamOffset = streamOffsetVal
   try {
     encryptor = codec.createEncryptor
@@ -55,7 +88,7 @@ FilterOutputStream(out: OutputStream) {
 
 
   def this(out: OutputStream, codec: CryptoCodec, bufferSize: Int, key: Array[Byte],
-    iv: Array[Byte]) {
+           iv: Array[Byte]) {
     this(out, codec, bufferSize, key, iv, 0)
   }
 
@@ -69,7 +102,7 @@ FilterOutputStream(out: OutputStream) {
   }
 
   def getWrappedStream: OutputStream = {
-     out
+    out
   }
 
   /**
@@ -92,7 +125,10 @@ FilterOutputStream(out: OutputStream) {
     else if (off < 0 || len < 0 || off > b.length || len > b.length - off) {
       throw new IndexOutOfBoundsException
     }
+    var inBufferNotNull: Boolean = (inBuffer != null)
     while (len > 0) {
+      inBufferNotNull = (inBuffer != null)
+      logInfo(s"line 130 inBuffer is not null $inBufferNotNull")
       val remaining: Int = inBuffer.remaining
       if (len < remaining) {
         inBuffer.put(b, off, len)
@@ -105,13 +141,17 @@ FilterOutputStream(out: OutputStream) {
         encrypt
       }
     }
+    inBufferNotNull = (inBuffer != null)
+    logInfo(s"Line 144 inBuffer is not null $inBufferNotNull")
   }
 
   /**
    * Do the encryption, input is {@link #inBuffer} and output is
    * {@link #outBuffer}.
    */
-   def encrypt {
+  def encrypt {
+    var inBufferNotNull: Boolean = (inBuffer != null)
+    logInfo(s"line 153 inBuffer is not null $inBufferNotNull")
     Preconditions.checkState(inBuffer.position >= padding)
     if (inBuffer.position == padding) {
       return
@@ -120,6 +160,8 @@ FilterOutputStream(out: OutputStream) {
     outBuffer.clear
     encryptor.encrypt(inBuffer, outBuffer)
     inBuffer.clear
+    inBufferNotNull = (inBuffer != null)
+    logInfo(s"line 163 inBuffer is not null $inBufferNotNull")
     outBuffer.flip
     if (padding > 0) {
       outBuffer.position(padding)
@@ -136,15 +178,17 @@ FilterOutputStream(out: OutputStream) {
   }
 
   /** Update the {@link #encryptor}: calculate counter and {@link #padding}. */
-   def updateEncryptor {
+  def updateEncryptor {
     val counter: Long = streamOffset / codec.getCipherSuite.algoBlockSize
     padding = (streamOffset % codec.getCipherSuite.algoBlockSize).asInstanceOf[Byte]
+    var inBufferNotNull: Boolean = (inBuffer != null)
+    logInfo(s"line 184 inBuffer is not null $inBufferNotNull")
     inBuffer.position(padding)
     codec.calculateIV(initIV, counter, iv)
     encryptor.init(key, iv)
   }
 
-   def getTmpBuf: Array[Byte] = {
+  def getTmpBuf: Array[Byte] = {
     if (tmpBuf == null) {
       tmpBuf = new Array[Byte](bufferSize)
     }
@@ -175,43 +219,21 @@ FilterOutputStream(out: OutputStream) {
     write(oneByteBuf, 0, oneByteBuf.length)
   }
 
-   def checkStream {
+  def checkStream {
     if (closed) {
       throw new IOException("Stream closed")
     }
   }
 
   /** Forcibly free the direct buffers. */
-   def freeBuffers {
+  def freeBuffers {
+    var inBufferNotNull: Boolean = (inBuffer != null)
+    logInfo(s"line 230 inBuffer is not null $inBufferNotNull")
     CryptoStreamUtils.freeDB(inBuffer)
+    inBufferNotNull = (inBuffer != null)
+    logInfo(s"line 233 inBuffer is not null $inBufferNotNull")
     CryptoStreamUtils.freeDB(outBuffer)
   }
 
-   var codec: CryptoCodec = null
-   var encryptor: Encryptor = null
-   var bufferSize: Int = 0
-  /**
-   * Input data buffer. The data starts at inBuffer.position() and ends at
-   * inBuffer.limit().
-   */
-   var inBuffer: ByteBuffer = null
-  /**
-   * Encrypted data buffer. The data starts at outBuffer.position() and ends at
-   * outBuffer.limit();
-   */
-   var outBuffer: ByteBuffer = null
-   var streamOffset: Long = 0
-  /**
-   * Padding = pos%(algorithm blocksize); Padding is put into {@link #inBuffer}
-   * before any other data goes in. The purpose of padding is to put input data
-   * at proper position.
-   */
-   var padding: Byte = 0
-   var closed: Boolean = false
-   var key: Array[Byte] = null
-   var initIV: Array[Byte] = null
-   var iv: Array[Byte] = null
-   var tmpBuf: Array[Byte] = null
-   val oneByteBuf: Array[Byte] = new Array[Byte](1)
 }
 

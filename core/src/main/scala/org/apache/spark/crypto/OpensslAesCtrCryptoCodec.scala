@@ -27,16 +27,14 @@ import org.apache.spark.{SparkConf, Logging}
 /**
  * Implement the AES-CTR crypto codec using JNI into OpenSSL.
  */
-class OpensslAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
+class OpensslAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Logging {
 
-  var conf: SparkConf = null
   var random: Random = null
-
-
   val loadingFailureReason: String = OpensslCipher.getLoadingFailureReason
   if (loadingFailureReason != null) {
     throw new RuntimeException(loadingFailureReason)
   }
+  setConf(conf)
 
   def setConf(conf: SparkConf) {
 //    this.conf = conf

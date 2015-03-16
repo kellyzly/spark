@@ -322,7 +322,8 @@ final class ShuffleBlockFetcherIterator(
               val streamOffset: Long = iv.length
               val credentials = SparkHadoopUtil.get.getCurrentUserCredentials()
              // val key: Array[Byte] = TokenCache.getShuffleSecretKey(credentials)
-              val key: Array[Byte] = credentials.getSecretKey(SPARK_SHUFFLE_TOKEN)
+              //val key: Array[Byte] = credentials.getSecretKey(SPARK_SHUFFLE_TOKEN)
+   val key:Array[Byte] =  Array[Byte](75,-103,40,-25,-17,64,59,-68,-102,73,-78,-6,60,16,-103,127)
               var cos = new CryptoInputStream(is0, cryptoCodec, bufferSize, key,
                 iv, streamOffset)
               is = blockManager.wrapForCompression(blockId, cos)

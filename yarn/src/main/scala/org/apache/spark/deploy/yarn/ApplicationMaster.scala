@@ -32,7 +32,6 @@ import akka.remote._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.mapreduce.CryptoUtils
 import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.hadoop.security.UserGroupInformation
@@ -50,6 +49,10 @@ import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
 import org.apache.spark.util.{AkkaUtils, ChildFirstURLClassLoader, MutableURLClassLoader,
   SignalLogger, Utils}
 import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
+import org.apache.spark.crypto.CryptoUtils
+import org.apache.spark.crypto.CommonConfigurationKeys
+.SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
+import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
 
 /**
  * Common application master functionality for Spark on Yarn.
@@ -570,15 +573,14 @@ private[spark] class ApplicationMaster(
   private def initJobCredentialsAndUGI() = {
     val sc = sparkContextRef.get()
     val conf = if (sc != null) sc.getConf else sparkConf
-    val hadoopConf: Configuration = SparkHadoopUtil.get.newConfiguration(conf)
     val isEncryptedShuffle = conf.getBoolean("spark.encrypted.shuffle", false)
     if (isEncryptedShuffle) {
       var keyGen: KeyGenerator = null
       try {
         val SHUFFLE_KEY_LENGTH: Int = 64
-        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(hadoopConf) == true) {
-          hadoopConf.getInt(MRJobConfig.MR_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
-            MRJobConfig.DEFAULT_MR_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
+        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(conf) == true) {
+          conf.getInt(SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
+           DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
         }
         else {
           SHUFFLE_KEY_LENGTH

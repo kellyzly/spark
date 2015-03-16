@@ -29,7 +29,7 @@ object NativeCodeLoader extends Logging{
    * Returns true only if this build was compiled with support for openssl.
    */
   @native
-  def buildSupportsOpenssl: Boolean
+ def buildSupportsOpenssl: Boolean
 
   @native
   def getLibraryName: String

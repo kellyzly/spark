@@ -43,7 +43,7 @@ class CryptoInputStream(in: InputStream, codecVal: CryptoCodec,
 ReadableByteChannel {
   var oneByteBuf: Array[Byte] = new Array[Byte](1)
   var codec: CryptoCodec = codecVal
-  var decryptor: Decryptor = getDecryptor
+
   var bufferSize: Integer = CryptoStreamUtils.checkBufferSize(codecVal, bufferSizeVal)
   /**
    * Input data buffer. The data starts at inBuffer.position() and ends at
@@ -84,9 +84,10 @@ ReadableByteChannel {
     new ConcurrentLinkedQueue[Decryptor]()
 
   var tmpBuf: Array[Byte] = null
-
+  var decryptor: Decryptor = getDecryptor
   CryptoStreamUtils.checkCodec(codecVal)
   resetStreamOffset(streamOffset)
+
 
   def this(in: InputStream, codec: CryptoCodec,
            bufferSize: Integer, key: Array[Byte], iv: Array[Byte]) {
@@ -417,15 +418,12 @@ ReadableByteChannel {
 
   /** Get decryptor from pool */
   def getDecryptor: Decryptor = {
-    var decryptor: Decryptor = decryptorPool.poll
-    if (decryptor == null) {
-      try {
-        decryptor = codec.createDecryptor
-      }
-      catch {
-        case e: GeneralSecurityException => {
-          throw new IOException(e)
-        }
+    try {
+      decryptor = codec.createDecryptor
+    }
+    catch {
+      case e: GeneralSecurityException => {
+        throw new IOException(e)
       }
     }
     decryptor

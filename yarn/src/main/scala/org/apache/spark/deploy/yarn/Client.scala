@@ -33,7 +33,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.mapred.Master
-import org.apache.hadoop.mapreduce.CryptoUtils
 import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
@@ -49,6 +48,10 @@ import org.apache.hadoop.yarn.util.Records
 import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkException}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.Utils
+import org.apache.spark.crypto.CryptoUtils
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
+import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
+
 
 private[spark] class Client(
     val args: ClientArguments,
@@ -549,14 +552,13 @@ private[spark] class Client(
   }
 
   def setMapShuffleTokens(credentials:Credentials,amContainer:ContainerLaunchContext){
-    val conf: Configuration = SparkHadoopUtil.get.newConfiguration(sparkConf)
     if (TokenCache.getShuffleSecretKey(credentials) == null) {
       var keyGen: KeyGenerator = null
       try {
         val SHUFFLE_KEY_LENGTH: Int = 64
-        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(conf) == true) {
-          conf.getInt(MRJobConfig.MR_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
-            MRJobConfig.DEFAULT_MR_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
+        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(sparkConf) == true) {
+          sparkConf.getInt(SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
+           DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
         }
         else {
           SHUFFLE_KEY_LENGTH

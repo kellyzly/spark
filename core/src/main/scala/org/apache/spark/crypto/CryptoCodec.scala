@@ -82,7 +82,7 @@ object CryptoCodec extends Logging {
 //  }
 
   def getInstance(conf: SparkConf, cipherSuite: CipherSuite): CryptoCodec = {
-    val klasses: List[String] = getCodecClasses(conf, cipherSuite)
+    var klasses: List[String] = getCodecClasses(conf, cipherSuite)
     var codec: CryptoCodec = null
     for (klass <- klasses) {
       try {
@@ -95,20 +95,21 @@ object CryptoCodec extends Logging {
           val ctor = universe.typeOf[org.apache.spark.crypto.JceAesCtrCryptoCodec].declaration(
             universe.nme.CONSTRUCTOR).asMethod
           val ctorm = cm.reflectConstructor(ctor)
-          val p = ctorm()
+          val p = ctorm(conf)
           c = p.asInstanceOf[org.apache.spark.crypto.CryptoCodec]
         } else {
           val classCryptoCodec = universe.typeOf[org.apache.spark.crypto.OpensslAesCtrCryptoCodec]
             .typeSymbol.asClass
           val cm = m.reflectClass(classCryptoCodec)
-          val ctor = universe.typeOf[org.apache.spark.crypto.OpensslAesCtrCryptoCodec].declaration(
+          val ctor = universe.typeOf[org.apache.spark.crypto.OpensslAesCtrCryptoCodec]
+            .declaration(
             universe.nme.CONSTRUCTOR).asMethod
           val ctorm = cm.reflectConstructor(ctor)
-          val p = ctorm()
+          val p = ctorm(conf)
           c = p.asInstanceOf[org.apache.spark.crypto.CryptoCodec]
         }
 
-        if (c.getCipherSuite.name == cipherSuite.name) {
+        if (c.getCipherSuite.name.equals(cipherSuite.name)) {
           if (codec == null) {
             logDebug(s"Using crypto codec $klass.getName.")
             codec = c
@@ -164,7 +165,7 @@ object CryptoCodec extends Logging {
 //  }
 
   def getCodecClasses(conf: SparkConf, cipherSuite: CipherSuite): List[String] = {
-    val result:List[String] = List()
+    var result:List[String] = List()
     val configName: String = SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX + cipherSuite
       .getConfigSuffix
     val codecString: String = conf.get(configName)
@@ -179,10 +180,10 @@ object CryptoCodec extends Logging {
       null
     }
 
-    val codecArray: Array[String] = codecString.trim.split(",")
+    var codecArray: Array[String] = codecString.trim.split(",")
     for (c <- codecArray) {
       try {
-        c :: result
+       result = c :: result
       }
       catch {
         case e: ClassCastException => {

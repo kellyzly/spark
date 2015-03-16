@@ -30,15 +30,14 @@ import org.apache.spark.crypto.CommonConfigurationKeys
 .SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT
 import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY
 
-class JceAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
+class JceAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Logging {
+  var provider: String = null
+  var random: SecureRandom = null
 
-  def getConf: SparkConf = {
-    conf
-  }
+  setConf(conf)
 
   def setConf(conf: SparkConf) {
-    this.conf = conf
-    provider = conf.get(SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY)
+    provider = conf.get(SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY,null)
     val secureRandomAlg: String = conf.get(SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY,
       SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT)
     try {
@@ -64,11 +63,6 @@ class JceAesCtrCryptoCodec extends AesCtrCryptoCodec with Logging {
   def generateSecureRandom(bytes: Array[Byte]) {
     random.nextBytes(bytes)
   }
-
-  var conf: SparkConf = null
-  var provider: String = null
-  var random: SecureRandom = null
-
 
   class JceAesCtrCipher(mode: Int, provider: String) extends Encryptor with Decryptor {
 

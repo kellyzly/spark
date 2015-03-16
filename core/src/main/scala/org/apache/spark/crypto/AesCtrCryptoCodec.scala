@@ -32,7 +32,7 @@ abstract class AesCtrCryptoCodec extends CryptoCodec {
 
     System.arraycopy(initIV, 0, IV, 0, CTR_OFFSET)
     var l:Long = 0
-    for (i <- 0 to 8) {
+    for (i <- 0 until 8) {
       l = ((l << 8) | (initIV(CTR_OFFSET + i) & 0xff))
     }
     l += counter
