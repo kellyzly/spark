@@ -29,12 +29,7 @@ import javax.crypto.{SecretKey, KeyGenerator}
 import akka.actor._
 import akka.remote._
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.io.Text
-import org.apache.hadoop.mapreduce.MRJobConfig
-import org.apache.hadoop.mapreduce.security.TokenCache
-import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.hadoop.yarn.api._
 import org.apache.hadoop.yarn.api.records._
@@ -594,8 +589,8 @@ private[spark] class ApplicationMaster(
       }
       val shuffleKey: SecretKey = keyGen.generateKey
       val credentials = SparkHadoopUtil.get.getCurrentUserCredentials
-      //TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
       credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded);
+      logInfo(s"ApplicationMaster.scala,shuffleKey.getEncoded:${shuffleKey.getEncoded}")
       SparkHadoopUtil.get.addCurrentUserCredentials(credentials)
     }
   }

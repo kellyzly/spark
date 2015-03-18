@@ -138,7 +138,21 @@ private[spark] class DiskBlockObjectWriter(
       throw new IllegalStateException("Writer already closed. Cannot be reopened.")
     }
     fos = new FileOutputStream(file, true)
-    val isEncryptedShuffle = sparkConf.getBoolean("spark.encrypted.shuffle", false)
+    var isEncryptedShuffle: Boolean = if (sparkConf != null) {
+      sparkConf.getBoolean("spark.encrypted" +
+        ".shuffle",
+        false)
+    }
+    else {
+      false
+    }
+    var isOnYarnMode = if (sparkConf != null) {
+      sparkConf.getBoolean("isOnYarnMode",
+        false)
+    }
+    else {
+      false
+    }
     if (isEncryptedShuffle) {
       val cryptoCodec: CryptoCodec = CryptoCodec.getInstance(sparkConf)
       val bufferSize: Int = sparkConf.getInt(
@@ -146,8 +160,12 @@ private[spark] class DiskBlockObjectWriter(
         DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB) * 1024
       val iv: Array[Byte] = createIV(cryptoCodec)
       val credentials = SparkHadoopUtil.get.getCurrentUserCredentials()
-      //val key: Array[Byte] = TokenCache.getShuffleSecretKey(credentials)
-      val key:Array[Byte] = Array[Byte](75,-103,40,-25,-17,64,59,-68,-102,73,-78,-6,60,16,-103, 127)
+      var key: Array[Byte] = Array[Byte](75, -103, 40, -25, -17, 64, 59, -68, -102, 73, -78, -6,
+        60, 16, -103, 127)
+      if (isOnYarnMode) {
+        key = TokenCache.getShuffleSecretKey(credentials)
+      }
+      logInfo(s"DiskBlockObjectWriter key:$key")
       fos.write(iv)
       val cos = new CryptoOutputStream(fos, cryptoCodec,
         bufferSize, key, iv, iv.length)

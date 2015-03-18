@@ -49,9 +49,9 @@ import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, Spar
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.Utils
 import org.apache.spark.crypto.CryptoUtils
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
 import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
-
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
 
 private[spark] class Client(
     val args: ClientArguments,
@@ -572,7 +572,9 @@ private[spark] class Client(
       }
 
       val shuffleKey: SecretKey = keyGen.generateKey
-      TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
+      //TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
+      credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded);
+      logInfo(s"Client.scala,shuffleKey.getEncoded:${shuffleKey.getEncoded}")
     }
     val dob: DataOutputBuffer = new DataOutputBuffer
     credentials.writeTokenStorageToStream(dob)

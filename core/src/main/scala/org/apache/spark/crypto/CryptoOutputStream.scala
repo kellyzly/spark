@@ -70,11 +70,7 @@ FilterOutputStream(out: OutputStream) with Logging {
   initIV = ivVal.clone
   iv = ivVal.clone
   inBuffer = ByteBuffer.allocateDirect(bufferSize)
-  var inBufferNotNull: Boolean = (inBuffer != null)
-  logInfo(s"line 73 inBuffer is not null $inBufferNotNull")
   outBuffer = ByteBuffer.allocateDirect(bufferSize)
-  var outBufferNotNull: Boolean = (outBuffer != null)
-  logInfo(s"outBuffer is not null $outBufferNotNull")
   streamOffset = streamOffsetVal
   try {
     encryptor = codec.createEncryptor
@@ -125,10 +121,7 @@ FilterOutputStream(out: OutputStream) with Logging {
     else if (off < 0 || len < 0 || off > b.length || len > b.length - off) {
       throw new IndexOutOfBoundsException
     }
-    var inBufferNotNull: Boolean = (inBuffer != null)
     while (len > 0) {
-      inBufferNotNull = (inBuffer != null)
-      logInfo(s"line 130 inBuffer is not null $inBufferNotNull")
       val remaining: Int = inBuffer.remaining
       if (len < remaining) {
         inBuffer.put(b, off, len)
@@ -141,8 +134,6 @@ FilterOutputStream(out: OutputStream) with Logging {
         encrypt
       }
     }
-    inBufferNotNull = (inBuffer != null)
-    logInfo(s"Line 144 inBuffer is not null $inBufferNotNull")
   }
 
   /**
@@ -150,8 +141,6 @@ FilterOutputStream(out: OutputStream) with Logging {
    * {@link #outBuffer}.
    */
   def encrypt {
-    var inBufferNotNull: Boolean = (inBuffer != null)
-    logInfo(s"line 153 inBuffer is not null $inBufferNotNull")
     Preconditions.checkState(inBuffer.position >= padding)
     if (inBuffer.position == padding) {
       return
@@ -160,8 +149,6 @@ FilterOutputStream(out: OutputStream) with Logging {
     outBuffer.clear
     encryptor.encrypt(inBuffer, outBuffer)
     inBuffer.clear
-    inBufferNotNull = (inBuffer != null)
-    logInfo(s"line 163 inBuffer is not null $inBufferNotNull")
     outBuffer.flip
     if (padding > 0) {
       outBuffer.position(padding)
@@ -181,8 +168,6 @@ FilterOutputStream(out: OutputStream) with Logging {
   def updateEncryptor {
     val counter: Long = streamOffset / codec.getCipherSuite.algoBlockSize
     padding = (streamOffset % codec.getCipherSuite.algoBlockSize).asInstanceOf[Byte]
-    var inBufferNotNull: Boolean = (inBuffer != null)
-    logInfo(s"line 184 inBuffer is not null $inBufferNotNull")
     inBuffer.position(padding)
     codec.calculateIV(initIV, counter, iv)
     encryptor.init(key, iv)
@@ -192,7 +177,7 @@ FilterOutputStream(out: OutputStream) with Logging {
     if (tmpBuf == null) {
       tmpBuf = new Array[Byte](bufferSize)
     }
-    return tmpBuf
+    tmpBuf
   }
 
   override def close {
@@ -227,13 +212,8 @@ FilterOutputStream(out: OutputStream) with Logging {
 
   /** Forcibly free the direct buffers. */
   def freeBuffers {
-    var inBufferNotNull: Boolean = (inBuffer != null)
-    logInfo(s"line 230 inBuffer is not null $inBufferNotNull")
     CryptoStreamUtils.freeDB(inBuffer)
-    inBufferNotNull = (inBuffer != null)
-    logInfo(s"line 233 inBuffer is not null $inBufferNotNull")
     CryptoStreamUtils.freeDB(outBuffer)
   }
-
 }
 

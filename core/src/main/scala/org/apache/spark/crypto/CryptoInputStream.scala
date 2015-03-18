@@ -120,54 +120,53 @@ ReadableByteChannel {
       throw new IndexOutOfBoundsException()
     } else if (len == 0) {
       0
-    }
-
-    val remaining: Integer = outBuffer.remaining()
-    if (remaining > 0) {
-      val n: Integer = Math.min(len, remaining)
-      outBuffer.get(b, off, n)
-      n
     } else {
-      var n: Integer = 0
+      val remaining: Integer = outBuffer.remaining()
+      if (remaining > 0) {
+        val n: Integer = Math.min(len, remaining)
+        outBuffer.get(b, off, n)
+        n
+      } else {
+        var n: Integer = 0
+        /*
+         * Check whether the underlying stream is {@link ByteBufferReadable},
+         * it can avoid bytes copy.
+         */
+        if (usingByteBufferReadInitialized == false) {
+          usingByteBufferReadInitialized = true
+          if (isReadableByteChannel) {
+            try {
 
-      /*
-       * Check whether the underlying stream is {@link ByteBufferReadable},
-       * it can avoid bytes copy.
-       */
-      if (usingByteBufferReadInitialized == false) {
-        usingByteBufferReadInitialized = true
-        if (isReadableByteChannel) {
-          try {
-
-            n = (in.asInstanceOf[ReadableByteChannel]).read(inBuffer)
-            usingByteBufferRead = true
-          } catch {
-            case e: UnsupportedOperationException =>
-              usingByteBufferRead = false
+              n = (in.asInstanceOf[ReadableByteChannel]).read(inBuffer)
+              usingByteBufferRead = true
+            } catch {
+              case e: UnsupportedOperationException =>
+                usingByteBufferRead = false
+            }
+          } else {
+            usingByteBufferRead = false
+          }
+          if (!usingByteBufferRead) {
+            n = readFromUnderlyingStream(inBuffer)
           }
         } else {
-          usingByteBufferRead = false
+          if (usingByteBufferRead) {
+            n = (in.asInstanceOf[ReadableByteChannel]).read(inBuffer)
+          } else {
+            n = readFromUnderlyingStream(inBuffer)
+          }
         }
-        if (!usingByteBufferRead) {
-          n = readFromUnderlyingStream(inBuffer)
-        }
-      } else {
-        if (usingByteBufferRead) {
-          n = (in.asInstanceOf[ReadableByteChannel]).read(inBuffer)
+        if (n <= 0) {
+          n
         } else {
-          n = readFromUnderlyingStream(inBuffer)
+          streamOffset += n // Read n bytes
+          decrypt(decryptor, inBuffer, outBuffer, padding)
+          padding = afterDecryption(decryptor, inBuffer, streamOffset, iv)
+          n = Math.min(len, outBuffer.remaining())
+          outBuffer.get(b, off, n)
+          n
         }
       }
-      if (n <= 0) {
-        n
-      }
-
-      streamOffset += n // Read n bytes
-      decrypt(decryptor, inBuffer, outBuffer, padding)
-      padding = afterDecryption(decryptor, inBuffer, streamOffset, iv)
-      n = Math.min(len, outBuffer.remaining())
-      outBuffer.get(b, off, n)
-      n
     }
   }
 
