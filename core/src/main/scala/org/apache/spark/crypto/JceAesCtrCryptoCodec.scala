@@ -16,20 +16,26 @@
  */
 package org.apache.spark.crypto
 
-import java.nio.ByteBuffer
-import javax.crypto.Cipher
-import com.google.common.base.Preconditions
-import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import java.io.IOException
 import java.lang.String
+import java.nio.ByteBuffer
 import java.security.{GeneralSecurityException, SecureRandom}
-import org.apache.spark.{SparkConf, Logging}
-import org.apache.spark.crypto.CommonConfigurationKeys
-.SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY
+import javax.crypto.Cipher
+import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
+
+import com.google.common.base.Preconditions
+
 import org.apache.spark.crypto.CommonConfigurationKeys
 .SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY
+import org.apache.spark.crypto.CommonConfigurationKeys
+.SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY
+//import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY
+import org.apache.spark.{SparkConf, Logging}
 
+/**
+ * Implement the AES-CTR crypto codec using JCE provider.
+ * @param conf
+ */
 class JceAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Logging {
   var provider: String = null
   var random: SecureRandom = null
@@ -37,12 +43,13 @@ class JceAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Loggin
   setConf(conf)
 
   def setConf(conf: SparkConf) {
-    provider = conf.get(SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY,null)
+  //  provider = conf.get(SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY,null)
     val secureRandomAlg: String = conf.get(SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY,
       SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT)
     try {
-      random = if ((provider != null)) SecureRandom.getInstance(secureRandomAlg,
-        provider) else SecureRandom.getInstance(secureRandomAlg)
+//      random = if ((provider != null)) SecureRandom.getInstance(secureRandomAlg,
+//        provider) else SecureRandom.getInstance(secureRandomAlg)
+        random =  SecureRandom.getInstance(secureRandomAlg)
     }
     catch {
       case e: GeneralSecurityException => {

@@ -35,19 +35,20 @@ import org.apache.hadoop.yarn.api._
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
-import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkEnv}
-import org.apache.spark.SparkException
+import org.apache.spark.crypto.CommonConfigurationKeys._
 import org.apache.spark.deploy.{PythonRunner, SparkHadoopUtil}
 import org.apache.spark.deploy.history.HistoryServer
 import org.apache.spark.scheduler.cluster.YarnSchedulerBackend
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages._
 import org.apache.spark.util.{AkkaUtils, ChildFirstURLClassLoader, MutableURLClassLoader,
-  SignalLogger, Utils}
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
-import org.apache.spark.crypto.CryptoUtils
-import org.apache.spark.crypto.CommonConfigurationKeys
-.SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
-import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
+SignalLogger, Utils}
+import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkEnv}
+import org.apache.spark.SparkException
+import scala.Some
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.RequestExecutors
+import akka.remote.DisassociatedEvent
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.AddWebUIFilter
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.KillExecutors
 
 /**
  * Common application master functionality for Spark on Yarn.
@@ -570,31 +571,35 @@ private[spark] class ApplicationMaster(
     val conf = if (sc != null) sc.getConf else sparkConf
     val isEncryptedShuffle = conf.getBoolean("spark.encrypted.shuffle", false)
     if (isEncryptedShuffle) {
-      var keyGen: KeyGenerator = null
-      try {
-        val SHUFFLE_KEY_LENGTH: Int = 64
-        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(conf) == true) {
-          conf.getInt(SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
-           DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
-        }
-        else {
-          SHUFFLE_KEY_LENGTH
-        }
-        val SHUFFLE_KEYGEN_ALGORITHM = "HmacSHA1";
-        keyGen = KeyGenerator.getInstance(SHUFFLE_KEYGEN_ALGORITHM)
-        keyGen.init(keyLen)
-      }
-      catch {
-        case e: NoSuchAlgorithmException => println("Error generating shuffle secret key")
-      }
-      val shuffleKey: SecretKey = keyGen.generateKey
       val credentials = SparkHadoopUtil.get.getCurrentUserCredentials
-      credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded);
-      logInfo(s"ApplicationMaster.scala,shuffleKey.getEncoded:${shuffleKey.getEncoded}")
-      SparkHadoopUtil.get.addCurrentUserCredentials(credentials)
+      val tmpKey = credentials.getSecretKey(SPARK_SHUFFLE_TOKEN)
+      if (credentials.getSecretKey(SPARK_SHUFFLE_TOKEN) == null) {
+        var keyGen: KeyGenerator = null
+        try {
+          val SHUFFLE_KEY_LENGTH: Int = 64
+          var keyLen: Int = if (conf.getBoolean(SPARK_ENCRYPTED_INTERMEDIATE_DATA,
+            DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA) == true) {
+            conf.getInt(SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
+              DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
+          }
+          else {
+            SHUFFLE_KEY_LENGTH
+          }
+          val SHUFFLE_KEYGEN_ALGORITHM = "HmacSHA1";
+          keyGen = KeyGenerator.getInstance(SHUFFLE_KEYGEN_ALGORITHM)
+          keyGen.init(keyLen)
+        }
+        catch {
+          case e: NoSuchAlgorithmException => println("Error generating shuffle secret key")
+        }
+        val shuffleKey: SecretKey = keyGen.generateKey
+        credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded)
+        SparkHadoopUtil.get.addCurrentUserCredentials(credentials)
+      }
     }
   }
 }
+
 
 object ApplicationMaster extends Logging {
 

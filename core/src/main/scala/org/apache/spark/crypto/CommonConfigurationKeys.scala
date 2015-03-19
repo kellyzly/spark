@@ -17,10 +17,9 @@
 package org.apache.spark.crypto
 
 import org.apache.hadoop.io.Text
-import java.lang.String
 
 /**
- *
+ * Constant variables
  */
 object CommonConfigurationKeys {
   val SPARK_SHUFFLE_TOKEN: Text = new Text("SPARK_SHUFFLE_TOKEN")
@@ -28,7 +27,7 @@ object CommonConfigurationKeys {
   val SPARK_SECURITY_CRYPTO_CIPHER_SUITE_DEFAULT: String = "AES/CTR/NoPadding";
   val SPARK_SECURITY_CRYPTO_CIPHER_SUITE_KEY: String = "spark.security.crypto.cipher.suite"
   val SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX: String = "spark.security.crypto.codec.classes"
-  val SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY: String = "spark.security.crypto.jce.provider"
+ // val SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY: String = "spark.security.crypto.jce.provider"
   val SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY: String = "spark.security.java.secure" +
     ".random" +
     ".algorithm"

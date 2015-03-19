@@ -16,17 +16,17 @@
  */
 package org.apache.spark.crypto
 
-import java.lang.{String, Integer}
+/**
+ * There are two CipherSuite: 1. UNKNOWN  2. AES_CTR_NOPADDING
+ */
+case class CipherSuite(name: String, algoBlockSize: Int) {
+  var unknownValue: Int = 0
 
-
-case class CipherSuite(name: String, algoBlockSize: Integer) {
-  var unknownValue: Integer = null
-
-  def setUnknownValue(unknown: Integer) {
+  def setUnknownValue(unknown: Int) {
     this.unknownValue = unknown
   }
 
-  def getUnknownValue(): Integer = unknownValue
+  def getUnknownValue(): Int = unknownValue
 
 
   override  def toString(): String = {

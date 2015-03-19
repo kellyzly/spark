@@ -17,29 +17,25 @@
 
 package org.apache.spark.storage
 
-import java.io.{InputStream, IOException}
-import java.net.URL
-import java.nio.ByteBuffer
+import java.io.InputStream
+//import java.nio.ByteBuffer
 import java.util.concurrent.LinkedBlockingQueue
 
 import scala.collection.mutable.{ArrayBuffer, HashSet, Queue}
 import scala.util.{Failure, Success, Try}
 
-
-import org.apache.hadoop.mapreduce.security.TokenCache
-
-import org.apache.spark.{Logging, TaskContext}
+import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
+import org.apache.spark.crypto.CryptoCodec
+import org.apache.spark.crypto.CryptoInputStream
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.network.BlockTransferService
 import org.apache.spark.network.shuffle.{BlockFetchingListener, ShuffleClient}
 import org.apache.spark.network.buffer.ManagedBuffer
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.util.{CompletionIterator, Utils}
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
-import org.apache.spark.crypto.CryptoCodec
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
-import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
-import org.apache.spark.crypto.CryptoInputStream
+import org.apache.spark.{Logging, TaskContext}
 /**
  * An iterator that fetches multiple blocks. For local blocks, it fetches from the local block
  * manager. For remote blocks, it fetches them using the provided BlockTransferService.
@@ -324,7 +320,7 @@ final class ShuffleBlockFetcherIterator(
               var key: Array[Byte] = Array[Byte](75, -103, 40, -25, -17, 64, 59, -68, -102, 73,
                -78,  -6, 60, 16, -103, 127)
               var isOnYarnMode = if (sparkConf != null) {
-                sparkConf.getBoolean("isOnYarnMode",
+                sparkConf.getBoolean("spark.isonyarnmode",
                   false)
               }
               else {
@@ -334,7 +330,6 @@ final class ShuffleBlockFetcherIterator(
                 key = credentials.getSecretKey(SPARK_SHUFFLE_TOKEN)
 
               }
-              logInfo(s"ShuffleBlockFetcherIterator key:$key")
               var cos = new CryptoInputStream(is0, cryptoCodec, bufferSize, key,
                 iv, streamOffset)
               is = blockManager.wrapForCompression(blockId, cos)

@@ -16,16 +16,19 @@
  */
 package org.apache.spark.crypto
 
-import com.google.common.base.Preconditions
-import org.apache.hadoop.fs.Seekable
-
 import java.io.InputStream
 import java.nio.ByteBuffer
 
-import sun.nio.ch.DirectBuffer
 import sun.misc.Cleaner
+import sun.nio.ch.DirectBuffer
 
+import com.google.common.base.Preconditions
 
+import org.apache.hadoop.fs.Seekable
+
+/**
+ * A util class for CryptoInputStream and  CryptoOutputStream
+ */
 object CryptoStreamUtils {
   /** Forcibly free the direct buffer. */
   def freeDB(buffer: ByteBuffer) {

@@ -18,20 +18,14 @@ package org.apache.spark.crypto
 
 import java.io.{IOException, FilterOutputStream, OutputStream}
 import java.nio.ByteBuffer
-import com.google.common.base.Preconditions
 import java.security.GeneralSecurityException
+
+import com.google.common.base.Preconditions
+
 import org.apache.spark.Logging
 
 /**
- * CryptoOutputStream encrypts data. It is not thread-safe. AES CTR mode is
- * required in order to ensure that the plain text and cipher text have a 1:1
- * mapping. The encryption is buffer based. The key points of the encryption are
- * (1) calculating counter and (2) padding through stream position.
- * <p/>
- * counter = base + pos/(algorithm blocksize);
- * padding = pos%(algorithm blocksize);
- * <p/>
- * The underlying stream offset is maintained as state.
+ * CryptoOutputStream encrypts data.
  */
 class CryptoOutputStream(out: OutputStream, codecVal: CryptoCodec, bufferSizeVal: Int,
                          keyVal: Array[Byte], ivVal: Array[Byte], streamOffsetVal: Long) extends

@@ -17,7 +17,7 @@
 
 package org.apache.spark.deploy.yarn
 
-import java.net.{InetAddress, UnknownHostException, URI, URISyntaxException}
+import java.net.{InetAddress, UnknownHostException, URI}
 import java.nio.ByteBuffer
 import java.security.NoSuchAlgorithmException
 import javax.crypto.{SecretKey, KeyGenerator}
@@ -28,30 +28,30 @@ import scala.util.{Try, Success, Failure}
 
 import com.google.common.base.Objects
 
-import org.apache.hadoop.io.DataOutputBuffer
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.permission.FsPermission
+import org.apache.hadoop.io.DataOutputBuffer
 import org.apache.hadoop.mapred.Master
 import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.util.StringUtils
-import org.apache.hadoop.yarn.api._
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
+import org.apache.hadoop.yarn.api._
 import org.apache.hadoop.yarn.api.protocolrecords._
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.util.Records
 
-import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkException}
+import org.apache.spark.crypto.CommonConfigurationKeys._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.Utils
-import org.apache.spark.crypto.CryptoUtils
-import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SHUFFLE_TOKEN
+import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkException}
+import scala.util.Failure
+import scala.Some
+import scala.util.Success
 
 private[spark] class Client(
     val args: ClientArguments,
@@ -556,14 +556,15 @@ private[spark] class Client(
       var keyGen: KeyGenerator = null
       try {
         val SHUFFLE_KEY_LENGTH: Int = 64
-        var keyLen: Int = if (CryptoUtils.isShuffleEncrypted(sparkConf) == true) {
+        var keyLen: Int = if (sparkConf.getBoolean(SPARK_ENCRYPTED_INTERMEDIATE_DATA,
+          DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA) == true) {
           sparkConf.getInt(SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS,
-           DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
+            DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_KEY_SIZE_BITS)
         }
         else {
           SHUFFLE_KEY_LENGTH
         }
-        val SHUFFLE_KEYGEN_ALGORITHM = "HmacSHA1";
+        val SHUFFLE_KEYGEN_ALGORITHM = "HmacSHA1"
         keyGen = KeyGenerator.getInstance(SHUFFLE_KEYGEN_ALGORITHM)
         keyGen.init(keyLen)
       }
@@ -572,9 +573,7 @@ private[spark] class Client(
       }
 
       val shuffleKey: SecretKey = keyGen.generateKey
-      //TokenCache.setShuffleSecretKey(shuffleKey.getEncoded, credentials)
-      credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded);
-      logInfo(s"Client.scala,shuffleKey.getEncoded:${shuffleKey.getEncoded}")
+      credentials.addSecretKey(SPARK_SHUFFLE_TOKEN, shuffleKey.getEncoded)
     }
     val dob: DataOutputBuffer = new DataOutputBuffer
     credentials.writeTokenStorageToStream(dob)

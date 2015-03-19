@@ -18,20 +18,16 @@
 package org.apache.spark.storage
 
 import java.io.{BufferedOutputStream, FileOutputStream, File, OutputStream}
-import java.net.URL
-import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 
 import org.apache.hadoop.mapreduce.security.TokenCache
-import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.spark.{Logging,SparkConf}
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.serializer.{SerializationStream, Serializer}
-import org.apache.spark.executor.ShuffleWriteMetrics
+import org.apache.spark.crypto.CommonConfigurationKeys._
 import org.apache.spark.crypto.{CryptoOutputStream, CryptoCodec}
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
-import org.apache.spark.crypto.CommonConfigurationKeys.DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.executor.ShuffleWriteMetrics
+import org.apache.spark.serializer.{SerializationStream, Serializer}
+import org.apache.spark.{Logging,SparkConf}
 /**
  * An interface for writing JVM objects to some underlying storage. This interface allows
  * appending data to an existing block, and can guarantee atomicity in the case of faults
@@ -147,7 +143,7 @@ private[spark] class DiskBlockObjectWriter(
       false
     }
     var isOnYarnMode = if (sparkConf != null) {
-      sparkConf.getBoolean("isOnYarnMode",
+      sparkConf.getBoolean("spark.isonyarnmode",
         false)
     }
     else {
@@ -163,9 +159,9 @@ private[spark] class DiskBlockObjectWriter(
       var key: Array[Byte] = Array[Byte](75, -103, 40, -25, -17, 64, 59, -68, -102, 73, -78, -6,
         60, 16, -103, 127)
       if (isOnYarnMode) {
-        key = TokenCache.getShuffleSecretKey(credentials)
+       // key = TokenCache.getShuffleSecretKey(credentials)
+        key = credentials.getSecretKey(SPARK_SHUFFLE_TOKEN)
       }
-      logInfo(s"DiskBlockObjectWriter key:$key")
       fos.write(iv)
       val cos = new CryptoOutputStream(fos, cryptoCodec,
         bufferSize, key, iv, iv.length)

@@ -17,11 +17,27 @@
 package org.apache.spark.crypto
 import java.nio.ByteBuffer
 
+/**
+ * Interface Decryptor
+ */
 trait Decryptor {
+  /**
+   * Initialize the decryptor and the internal decryption context.
+   * reset.
+   * @param key decryption key.
+   * @param iv decryption initialization vector
+   * @throws IOException if initialization fails
+   */
   def init(key: Array[Byte], iv: Array[Byte])
 
+  /**
+   * Indicate whether the decryption context is reset.
+   */
   def isContextReset: Boolean
 
+  /**
+   * This presents a direct interface decrypting with direct ByteBuffers.
+   */
   def decrypt(inBuffer: ByteBuffer, outBuffer: ByteBuffer)
 }
 

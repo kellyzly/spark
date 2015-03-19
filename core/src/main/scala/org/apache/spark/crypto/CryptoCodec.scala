@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 package org.apache.spark.crypto
+
 import java.lang.{String, ClassCastException}
-import org.apache.spark.{SparkConf, Logging}
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_CIPHER_SUITE_KEY
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_CIPHER_SUITE_DEFAULT
-import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX
+
 import scala.reflect.runtime.universe
 
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_CIPHER_SUITE_DEFAULT
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_CIPHER_SUITE_KEY
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX
+import org.apache.spark.{SparkConf, Logging}
+
+
+/**
+ * abstract class CryptoCodec
+ */
 abstract case class CryptoCodec() {
   def getCipherSuite(): CipherSuite
 

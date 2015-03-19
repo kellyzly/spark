@@ -16,26 +16,20 @@
  */
 package org.apache.spark.crypto
 
-import java.util.Queue
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.io.{IOException, InputStream, FilterInputStream}
+import java.lang.UnsupportedOperationException
 import java.nio.ByteBuffer
 import java.nio.channels.ReadableByteChannel
-import java.lang.UnsupportedOperationException
-import com.google.common.base.Preconditions
-import org.apache.hadoop.fs.ByteBufferReadable
 import java.security.GeneralSecurityException
+import java.util.Queue
+import java.util.concurrent.ConcurrentLinkedQueue
+
+import com.google.common.base.Preconditions
+
+import org.apache.hadoop.fs.ByteBufferReadable
 
 /**
- * CryptoInputStream decrypts data. It is not thread-safe. AES CTR mode is
- * required in order to ensure that the plain text and cipher text have a 1:1
- * mapping. The decryption is buffer based. The key points of the decryption
- * are (1) calculating the counter and (2) padding through stream position:
- * <p/>
- * counter = base + pos/(algorithm blocksize);
- * padding = pos%(algorithm blocksize);
- * <p/>
- * The underlying stream offset is maintained as state.
+ * CryptoInputStream decrypts data.
  */
 class CryptoInputStream(in: InputStream, codecVal: CryptoCodec,
                         bufferSizeVal: Integer, keyVal: Array[Byte], ivVal: Array[Byte],
