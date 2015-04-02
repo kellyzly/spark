@@ -75,6 +75,16 @@ object CryptoCodec extends Logging {
     getInstance(conf, CipherSuite.convert(name))
   }
 
+  /**
+   * Get crypto codec for specified algorithm/mode/padding.
+   *
+   * @param conf
+   * the configuration
+   * @param cipherSuite
+   * algorithm/mode/padding
+   * @return CryptoCodec the codec object. Null value will be returned if no
+   *         crypto codec classes with cipher suite configured.
+   */
   def getInstance(conf: SparkConf, cipherSuite: CipherSuite): CryptoCodec = {
     var klasses: List[String] = getCodecClasses(conf, cipherSuite)
     var codec: CryptoCodec = null

@@ -29,10 +29,11 @@ object CommonConfigurationKeys {
   val SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX: String = "spark.security.crypto.codec.classes"
   val SPARK_SECURITY_CRYPTO_CODEC_CLASSES_AES_CTR_NOPADDING_KEY
   :String = SPARK_SECURITY_CRYPTO_CODEC_CLASSES_KEY_PREFIX + AES_CTR_NOPADDING.getConfigSuffix()
+  val SPARK_SECURITY_CRYPTO_JCE_PROVIDER_KEY: String = "spark.security.crypto.jce.provider"
   val SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_KEY: String = "spark.security.java.secure" +
     ".random.algorithm"
   val SPARK_SECURITY_JAVA_SECURE_RANDOM_ALGORITHM_DEFAULT: String = "SHA1PRNG"
-  val SPARK_SECURITY_SECURE_RANDOM_IMPL_KEY: String = "spark.security.secure.random.impl"
+  val USE_SPARK_SECURITY_SECURE_RANDOM: String = "spark.use.spark.security.secure.random"
   val SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB: String = "spark.job" +
     ".encrypted-intermediate-data.buffer.kb"
   val DEFAULT_SPARK_ENCRYPTED_INTERMEDIATE_DATA_BUFFER_KB: Int = 128

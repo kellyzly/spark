@@ -54,4 +54,10 @@ object CryptoStreamUtils {
       throw new RuntimeException("AES/CTR/NoPadding is required")
     }
   }
+    def  getRandomDevPath():String= {
+       System.getProperty(
+        CRYPTOSTREAM_RANDOM_DEVICE_FILE_PATH_KEY,
+        CRYPTOSTREAM_RANDOM_DEVICE_FILE_PATH_DEFAULT)
+    }
+
 }
