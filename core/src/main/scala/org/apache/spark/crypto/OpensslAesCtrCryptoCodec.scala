@@ -27,12 +27,13 @@ import com.google.common.base.Preconditions
 
 import org.apache.spark.{SparkConf, Logging}
 import org.apache.spark.crypto.CommonConfigurationKeys.USE_SPARK_SECURITY_SECURE_RANDOM
+import org.apache.spark.crypto.random.OpensslSecureRandom
 
 
 /**
-* Implement the AES-CTR crypto codec using JNI into OpenSSL.
-*/
-class OpensslAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Logging {
+ * Implement the AES-CTR crypto codec using JNI into OpenSSL.
+ */
+class OpensslAesCtrCryptoCodec(conf: SparkConf) extends AesCtrCryptoCodec with Logging {
 
   var random: Random = null
   val loadingFailureReason: String = OpensslCipher.getLoadingFailureReason
@@ -42,14 +43,12 @@ class OpensslAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Lo
   setConf(conf)
 
   def setConf(conf: SparkConf) {
-    random = if (conf.getBoolean(USE_SPARK_SECURITY_SECURE_RANDOM,false) == true) {
-       new OsSecureRandom()
-    } else{
-       new SecureRandom()
+    random = if (conf.getBoolean(USE_SPARK_SECURITY_SECURE_RANDOM, false) != false) {
+      new OpensslSecureRandom()
+    } else {
+      new SecureRandom()
     }
   }
-
-
 
   protected override def finalize {
     try {
@@ -68,11 +67,12 @@ class OpensslAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Lo
   }
 
   def createEncryptor: Encryptor = {
-    new OpensslAesCtrCipher(OpensslCipher.ENCRYPT_MODE)
+    new OpensslAesCtrCipher(Cipher.ENCRYPT_MODE)
   }
 
+
   def createDecryptor: Decryptor = {
-    new OpensslAesCtrCipher(OpensslCipher.DECRYPT_MODE)
+    new OpensslAesCtrCipher(Cipher.DECRYPT_MODE)
   }
 
   def generateSecureRandom(bytes: Array[Byte]) {
@@ -126,17 +126,5 @@ class OpensslAesCtrCryptoCodec(conf:SparkConf) extends AesCtrCryptoCodec with Lo
     def isContextReset: Boolean = {
       contextReset
     }
-  }
-
-  def createEncryptor: Encryptor = {
-    new OpensslAesCtrCryptoCodec(Cipher.DECRYPT_MODE, provider)
-  }
-
-
-  def createDecryptor: Decryptor = {
-    new OpensslAesCtrCryptoCodec(Cipher.DECRYPT_MODE, provider)
-  }
-
-  def generateSecureRandom(bytes: Array[Byte]) {
   }
 }

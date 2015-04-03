@@ -16,13 +16,13 @@
  * limitations under the License.
  */
  
-#include "org_apache_hadoop_crypto.h"
+#include "org_apache_spark_crypto.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
  
-#include "org_apache_hadoop_crypto_OpensslCipher.h"
+#include "org_apache_spark_crypto_OpensslCipher.h"
 
 #ifdef UNIX
 static EVP_CIPHER_CTX * (*dlsym_EVP_CIPHER_CTX_new)(void);
@@ -83,20 +83,20 @@ static void loadAesCtr(JNIEnv *env)
 #endif
 }
 
-JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_initIDs
+JNIEXPORT void JNICALL Java_org_apache_spark_crypto_OpensslCipher_initIDs
     (JNIEnv *env, jclass clazz)
 {
   char msg[1000];
 #ifdef UNIX
-  openssl = dlopen(HADOOP_OPENSSL_LIBRARY, RTLD_LAZY | RTLD_GLOBAL);
+  openssl = dlopen(SPARK_OPENSSL_LIBRARY, RTLD_LAZY | RTLD_GLOBAL);
 #endif
 
 #ifdef WINDOWS
-  openssl = LoadLibrary(HADOOP_OPENSSL_LIBRARY);
+  openssl = LoadLibrary(SPARK_OPENSSL_LIBRARY);
 #endif
 
   if (!openssl) {
-    snprintf(msg, sizeof(msg), "Cannot load %s (%s)!", HADOOP_OPENSSL_LIBRARY,  \
+    snprintf(msg, sizeof(msg), "Cannot load %s (%s)!", SPARK_OPENSSL_LIBRARY,  \
         dlerror());
     THROW(env, "java/lang/UnsatisfiedLinkError", msg);
     return;
@@ -153,7 +153,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_initIDs
   }
 }
 
-JNIEXPORT jlong JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_initContext
+JNIEXPORT jlong JNICALL Java_org_apache_spark_crypto_OpensslCipher_initContext
     (JNIEnv *env, jclass clazz, jint alg, jint padding)
 {
   if (alg != AES_CTR) {
@@ -195,7 +195,7 @@ static EVP_CIPHER * getEvpCipher(int alg, int keyLen)
   return cipher;
 }
 
-JNIEXPORT jlong JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_init
+JNIEXPORT jlong JNICALL Java_org_apache_spark_crypto_OpensslCipher_init
     (JNIEnv *env, jobject object, jlong ctx, jint mode, jint alg, jint padding, 
     jbyteArray key, jbyteArray iv)
 {
@@ -274,7 +274,7 @@ static int check_update_max_output_len(EVP_CIPHER_CTX *context, int input_len,
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_update
+JNIEXPORT jint JNICALL Java_org_apache_spark_crypto_OpensslCipher_update
     (JNIEnv *env, jobject object, jlong ctx, jobject input, jint input_offset, 
     jint input_len, jobject output, jint output_offset, jint max_output_len)
 {
@@ -319,7 +319,7 @@ static int check_doFinal_max_output_len(EVP_CIPHER_CTX *context,
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_doFinal
+JNIEXPORT jint JNICALL Java_org_apache_spark_crypto_OpensslCipher_doFinal
     (JNIEnv *env, jobject object, jlong ctx, jobject output, jint offset, 
     jint max_output_len)
 {
@@ -345,7 +345,7 @@ JNIEXPORT jint JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_doFinal
   return output_len;
 }
 
-JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_clean
+JNIEXPORT void JNICALL Java_org_apache_spark_crypto_OpensslCipher_clean
     (JNIEnv *env, jobject object, jlong ctx) 
 {
   EVP_CIPHER_CTX *context = CONTEXT(ctx);
@@ -354,7 +354,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_clean
   }
 }
 
-JNIEXPORT jstring JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_getLibraryName
+JNIEXPORT jstring JNICALL Java_org_apache_spark_crypto_OpensslCipher_getLibraryName
     (JNIEnv *env, jclass clazz) 
 {
 #ifdef UNIX
@@ -367,7 +367,7 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_crypto_OpensslCipher_getLibrary
     }
   }
 
-  return (*env)->NewStringUTF(env, HADOOP_OPENSSL_LIBRARY);
+  return (*env)->NewStringUTF(env, SPARK_OPENSSL_LIBRARY);
 #endif
 
 #ifdef WINDOWS

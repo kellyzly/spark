@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,47 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
-#ifndef ORG_APACHE_HADOOP_CRYPTO_H
-#define ORG_APACHE_HADOOP_CRYPTO_H
 
-#include "org_apache_hadoop.h"
+#include "org_apache_spark.h"
 
 #ifdef UNIX
 #include <dlfcn.h>
 #include "config.h"
-#endif
+#endif // UNIX
 
 #ifdef WINDOWS
 #include "winutils.h"
 #endif
 
-#include <openssl/aes.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
+#include <jni.h>
 
-/**
- * A helper macro to convert the java 'context-handle' 
- * to a EVP_CIPHER_CTX pointer. 
- */
-#define CONTEXT(context) ((EVP_CIPHER_CTX*)((ptrdiff_t)(context)))
+JNIEXPORT jboolean JNICALL Java_org_apache_spark_util_NativeCodeLoader_buildSupportsOpenssl
+  (JNIEnv *env, jclass clazz)
+{
+#ifdef SPARK_OPENSSL_LIBRARY
+  return JNI_TRUE;
+#else
+  return JNI_FALSE;
+#endif
+}
 
-/**
- * A helper macro to convert the EVP_CIPHER_CTX pointer to the 
- * java 'context-handle'.
- */
-#define JLONG(context) ((jlong)((ptrdiff_t)(context)))
-
-#define KEY_LENGTH_128 16
-#define KEY_LENGTH_256 32
-#define IV_LENGTH 16
-
-#define ENCRYPT_MODE 1
-#define DECRYPT_MODE 0
-
-/** Currently only support AES/CTR/NoPadding. */
-#define AES_CTR 0
-#define NOPADDING 0
-#define PKCSPADDING 1
-
-#endif //ORG_APACHE_HADOOP_CRYPTO_H

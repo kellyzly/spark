@@ -23,6 +23,9 @@ import sun.nio.ch.DirectBuffer
 
 import com.google.common.base.Preconditions
 
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_SECURE_RANDOM_DEVICE_FILE_PATH_KEY
+import org.apache.spark.crypto.CommonConfigurationKeys.SPARK_SECURITY_SECURE_RANDOM_DEVICE_FILE_PATH_DEFAULT
+
 /**
  * A util class for CryptoInputStream and  CryptoOutputStream
  */
@@ -54,10 +57,11 @@ object CryptoStreamUtils {
       throw new RuntimeException("AES/CTR/NoPadding is required")
     }
   }
-    def  getRandomDevPath():String= {
-       System.getProperty(
-        CRYPTOSTREAM_RANDOM_DEVICE_FILE_PATH_KEY,
-        CRYPTOSTREAM_RANDOM_DEVICE_FILE_PATH_DEFAULT)
-    }
+
+  def getRandomDevPath(): String = {
+    System.getProperty(
+      SPARK_SECURITY_SECURE_RANDOM_DEVICE_FILE_PATH_KEY,
+      SPARK_SECURITY_SECURE_RANDOM_DEVICE_FILE_PATH_DEFAULT)
+  }
 
 }

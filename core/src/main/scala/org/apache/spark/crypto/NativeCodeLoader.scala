@@ -15,23 +15,22 @@
 * limitations under the License.
 */
 package org.apache.spark.crypto
-//
-//import java.lang.String
+
 import org.apache.spark.Logging
-//
-///**
-// * A helper to load the native cryptostream code i.e. libcryptostream.so.
-// * This handles the fallback to either the bundled libcryptostream-Linux-i386-32.so
-// * or the default java implementations where appropriate.
-// * need to be removed
-// */
-object NativeCodeLoader extends Logging{
-//  /**
-//   * Returns true only if this build was compiled with support for openssl.
-//   */
-//  @native
-// def buildSupportsOpenssl: Boolean
-//
+
+/**
+ * A helper to load the native cryptostream code i.e. libcryptostream.so.
+ * This handles the fallback to either the bundled libcryptostream-Linux-i386-32.so
+ * or the default java implementations where appropriate.
+ * need to be removed
+ */
+object NativeCodeLoader extends Logging {
+  /**
+   * Returns true only if this build was compiled with support for openssl.
+   */
+  @native
+  def buildSupportsOpenssl: Boolean
+
 //  @native
 //  def getLibraryName: String
 }

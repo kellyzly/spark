@@ -18,11 +18,11 @@
 
 /**
  * This file includes some common utilities
- * for all native code used in hadoop.
+ * for all native code used in spark.
  */
 
-#if !defined ORG_APACHE_HADOOP_H
-#define ORG_APACHE_HADOOP_H
+#if !defined ORG_APACHE_SPARK_H
+#define ORG_APACHE_SPARK_H
 
 #if defined(_WIN32)
 #undef UNIX

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "org_apache_hadoop_crypto_random.h"
+#include "org_apache_spark_crypto_random.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@
 #include <windows.h>
 #endif
  
-#include "org_apache_hadoop_crypto_random_OpensslSecureRandom.h"
+#include "org_apache_spark_crypto_random_OpensslSecureRandom.h"
 
 #ifdef UNIX
 static void * (*dlsym_CRYPTO_malloc) (int, const char *, int);
@@ -90,20 +90,20 @@ static ENGINE * openssl_rand_init(void);
 static void openssl_rand_clean(ENGINE *eng, int clean_locks);
 static int openssl_rand_bytes(unsigned char *buf, int num);
 
-JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_random_OpensslSecureRandom_initSR
+JNIEXPORT void JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRandom_initSR
     (JNIEnv *env, jclass clazz)
 {
   char msg[1000];
 #ifdef UNIX
-  void *openssl = dlopen(HADOOP_OPENSSL_LIBRARY, RTLD_LAZY | RTLD_GLOBAL);
+  void *openssl = dlopen(SPARK_OPENSSL_LIBRARY, RTLD_LAZY | RTLD_GLOBAL);
 #endif
 
 #ifdef WINDOWS
-  HMODULE openssl = LoadLibrary(HADOOP_OPENSSL_LIBRARY);
+  HMODULE openssl = LoadLibrary(SPARK_OPENSSL_LIBRARY);
 #endif
 
   if (!openssl) {
-    snprintf(msg, sizeof(msg), "Cannot load %s (%s)!", HADOOP_OPENSSL_LIBRARY,  \
+    snprintf(msg, sizeof(msg), "Cannot load %s (%s)!", SPARK_OPENSSL_LIBRARY,  \
         dlerror());
     THROW(env, "java/lang/UnsatisfiedLinkError", msg);
     return;
@@ -164,7 +164,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_crypto_random_OpensslSecureRandom_
   openssl_rand_init();
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_hadoop_crypto_random_OpensslSecureRandom_nextRandBytes___3B
+JNIEXPORT jboolean JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRandom_nextRandBytes___3B
     (JNIEnv *env, jobject object, jbyteArray bytes)
 {
   if (NULL == bytes) {

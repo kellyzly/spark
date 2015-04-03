@@ -22,7 +22,6 @@ import java.security.NoSuchAlgorithmException
 import java.util.StringTokenizer
 import javax.crypto.NoSuchPaddingException
 import com.google.common.base.Preconditions
-import org.apache.hadoop.util.NativeCodeLoader
 import org.apache.spark.Logging
 
 /**
