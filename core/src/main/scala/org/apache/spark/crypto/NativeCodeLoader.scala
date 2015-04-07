@@ -25,12 +25,33 @@ import org.apache.spark.Logging
  * need to be removed
  */
 object NativeCodeLoader extends Logging {
+  private var nativeCodeLoaded:Boolean = false
+  // Try to load native spark library and set fallback flag appropriately
+  logInfo("Trying to load the custom-built native-spark library...")
+  try {
+    System.loadLibrary("spark")
+    logInfo("Loaded the native-spark library")
+    nativeCodeLoaded = true
+  }
+  catch {
+    case t: Throwable => {
+      logInfo("Failed to load native-spark with error: " + t)
+      logInfo(s"java.library.path=${System.getProperty("java.library.path")}")
+    }
+  }
+
+  if (!nativeCodeLoaded) {
+    logInfo("Unable to load native-spark library for your platform... " + "using builtin-java" +
+      "classes where applicable")
+  }
+
+
   /**
    * Returns true only if this build was compiled with support for openssl.
    */
   @native
   def buildSupportsOpenssl: Boolean
 
-//  @native
-//  def getLibraryName: String
+  //  @native
+  //  def getLibraryName: String
 }

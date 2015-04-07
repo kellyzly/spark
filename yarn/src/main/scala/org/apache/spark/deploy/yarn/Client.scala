@@ -49,6 +49,7 @@ import org.apache.spark.crypto.CommonConfigurationKeys._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.Utils
 import org.apache.spark.{Logging, SecurityManager, SparkConf, SparkContext, SparkException}
+import scala.collection.mutable
 
 private[spark] class Client(
     val args: ClientArguments,
@@ -545,7 +546,11 @@ private[spark] class Client(
     }
     if (isEncryptedShuffle) {
       setSparkShuffleTokens(credentials, amContainer)
-      // amContainer.setEnvironment()  set the LD_LIBRARY_PATH like "xxx.so" here
+      var userEnv = Map[String, String]()
+      userEnv.put(Environment.LD_LIBRARY_PATH.name,
+        "/home/zly/prj/oss/kellyzly/spark/core/target/native/target/usr/local/lib/libspark.so")
+      amContainer.setEnvironment(userEnv) // set the LD_LIBRARY_PATH like "xxx.so" here
+      logInfo(s"setUserEnv LD_LIBRARY_PATH ${userEnv(Environment.LD_LIBRARY_PATH.name)}")
     }
     setupSecurityToken(amContainer)
     UserGroupInformation.getCurrentUser().addCredentials(credentials)

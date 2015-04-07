@@ -181,6 +181,7 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 add_dual_library(spark
     main/native/src/exception.c
+    ${D}/crypto/NativeCodeLoader.c
     ${OPENSSL_SOURCE_FILES}
 )
 if (NEED_LINK_DL)
