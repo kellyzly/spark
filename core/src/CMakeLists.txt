@@ -182,6 +182,9 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 add_dual_library(spark
     main/native/src/exception.c
     ${D}/crypto/NativeCodeLoader.c
+    ${D}/crypto/Test2.c
+    ${D}/crypto/random/Test1.c
+    ${D}/crypto/JNI_Load.c
     ${OPENSSL_SOURCE_FILES}
 )
 if (NEED_LINK_DL)

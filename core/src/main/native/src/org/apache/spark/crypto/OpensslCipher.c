@@ -83,7 +83,7 @@ static void loadAesCtr(JNIEnv *env)
 #endif
 }
 
-JNIEXPORT void JNICALL Java_org_apache_spark_crypto_OpensslCipher_initIDs
+void JNICALL initIDs
     (JNIEnv *env, jclass clazz)
 {
   char msg[1000];
@@ -153,7 +153,7 @@ JNIEXPORT void JNICALL Java_org_apache_spark_crypto_OpensslCipher_initIDs
   }
 }
 
-JNIEXPORT jlong JNICALL Java_org_apache_spark_crypto_OpensslCipher_initContext
+jlong JNICALL initContext
     (JNIEnv *env, jclass clazz, jint alg, jint padding)
 {
   if (alg != AES_CTR) {
@@ -195,7 +195,7 @@ static EVP_CIPHER * getEvpCipher(int alg, int keyLen)
   return cipher;
 }
 
-JNIEXPORT jlong JNICALL Java_org_apache_spark_crypto_OpensslCipher_init
+jlong JNICALL init
     (JNIEnv *env, jobject object, jlong ctx, jint mode, jint alg, jint padding, 
     jbyteArray key, jbyteArray iv)
 {
@@ -274,7 +274,7 @@ static int check_update_max_output_len(EVP_CIPHER_CTX *context, int input_len,
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_spark_crypto_OpensslCipher_update
+jint JNICALL update
     (JNIEnv *env, jobject object, jlong ctx, jobject input, jint input_offset, 
     jint input_len, jobject output, jint output_offset, jint max_output_len)
 {
@@ -319,7 +319,7 @@ static int check_doFinal_max_output_len(EVP_CIPHER_CTX *context,
   }
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_spark_crypto_OpensslCipher_doFinal
+jint JNICALL doFinal
     (JNIEnv *env, jobject object, jlong ctx, jobject output, jint offset, 
     jint max_output_len)
 {
@@ -345,7 +345,7 @@ JNIEXPORT jint JNICALL Java_org_apache_spark_crypto_OpensslCipher_doFinal
   return output_len;
 }
 
-JNIEXPORT void JNICALL Java_org_apache_spark_crypto_OpensslCipher_clean
+void  clean
     (JNIEnv *env, jobject object, jlong ctx) 
 {
   EVP_CIPHER_CTX *context = CONTEXT(ctx);
@@ -354,7 +354,7 @@ JNIEXPORT void JNICALL Java_org_apache_spark_crypto_OpensslCipher_clean
   }
 }
 
-JNIEXPORT jstring JNICALL Java_org_apache_spark_crypto_OpensslCipher_getLibraryName
+jstring JNICALL getLibraryName
     (JNIEnv *env, jclass clazz) 
 {
 #ifdef UNIX
@@ -380,3 +380,4 @@ JNIEXPORT jstring JNICALL Java_org_apache_spark_crypto_OpensslCipher_getLibraryN
   }
 #endif
 }
+

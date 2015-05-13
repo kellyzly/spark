@@ -21,6 +21,7 @@ import com.google.common.base.Preconditions
 import java.security.SecureRandom
 import org.apache.spark.crypto.NativeCodeLoader
 import org.apache.spark.Logging
+import org.apache.spark.crypto.Test2
 
 /**
  * OpenSSL secure random using JNI.
@@ -37,24 +38,38 @@ import org.apache.spark.Logging
  * @see http://en.wikipedia.org/wiki/RdRand
  */
 object OpensslSecureRandom extends Logging {
-  private var nativeEnabled: Boolean = false
-  if (NativeCodeLoader.buildSupportsOpenssl) {
-    try {
-      initSR
-      nativeEnabled = true
-    }
-    catch {
-      case t: Throwable => {
-        logInfo(s"Failed to load Openssl SecureRandom $t")
-      }
-    }
-  }
+  @native
+  def initSR()
 
   @native
-  def initSR
+  def initSR1()
+
+  var nativeEnabled: Boolean = {
+    if (NativeCodeLoader.isNativeCodeLoaded() &&
+      NativeCodeLoader.buildSupportsOpenssl()) {
+      try {
+       // initSR1
+        Test1.initTest1()
+        Test2.initTest2()
+        nativeEnabled = true
+        true
+      }
+      catch {
+        case t: Throwable => {
+          logInfo(s"Failed to load Openssl SecureRandom $t")
+        }
+          false
+      }
+    } else {
+      false
+    }
+  }
 }
 
 class OpensslSecureRandom extends Random {
+
+  /** If native SecureRandom unavailable, use java SecureRandom */
+  private var fallback: SecureRandom = null
 
   if (!OpensslSecureRandom.nativeEnabled) {
     fallback = new SecureRandom
@@ -98,8 +113,6 @@ class OpensslSecureRandom extends Random {
     next >>> (numBytes * 8 - numBits)
   }
 
-  /** If native SecureRandom unavailable, use java SecureRandom */
-  private var fallback: SecureRandom = null
 
   @native
   def nextRandBytes(bytes: Array[Byte]): Boolean

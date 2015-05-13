@@ -28,7 +28,8 @@
 #endif
 
 #include <jni.h>
-JNIEXPORT jboolean JNICALL Java_org_apache_spark_crypto_NativeCodeLoader_buildSupportsOpenssl
+
+jboolean JNICALL buildSupportsOpenssl
   (JNIEnv *env, jclass clazz)
 {
 #ifdef SPARK_OPENSSL_LIBRARY
@@ -37,4 +38,3 @@ JNIEXPORT jboolean JNICALL Java_org_apache_spark_crypto_NativeCodeLoader_buildSu
   return JNI_FALSE;
 #endif
 }
-

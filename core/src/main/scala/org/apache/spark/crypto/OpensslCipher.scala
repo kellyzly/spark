@@ -81,13 +81,13 @@ object OpensslCipher extends Logging {
   }
 
   @native
-  def initIDs
+  def initIDs()
 
   @native
   def initContext(alg: Int, padding: Int): Long
 
   @native
-  def getLibraryName: String
+  def getLibraryName(): String
 
   /** Currently only support AES/CTR/NoPadding. */
   object AlgMode extends Enumeration {

@@ -90,8 +90,11 @@ static ENGINE * openssl_rand_init(void);
 static void openssl_rand_clean(ENGINE *eng, int clean_locks);
 static int openssl_rand_bytes(unsigned char *buf, int num);
 
-JNIEXPORT void JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRandom_initSR
-    (JNIEnv *env, jclass clazz)
+void JNICALL initSR1(JNIEnv *env, jclass clazz){
+
+}
+
+void JNICALL initSR(JNIEnv *env, jclass clazz)
 {
   char msg[1000];
 #ifdef UNIX
@@ -105,7 +108,7 @@ JNIEXPORT void JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRandom_i
   if (!openssl) {
     snprintf(msg, sizeof(msg), "Cannot load %s (%s)!", SPARK_OPENSSL_LIBRARY,  \
         dlerror());
-    THROW(env, "java/lang/UnsatisfiedLinkError", msg);
+    THROW(env, "java/lang/UnsatisfiedLinkError1", msg);
     return;
   }
 
@@ -164,8 +167,8 @@ JNIEXPORT void JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRandom_i
   openssl_rand_init();
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRandom_nextRandBytes___3B
-    (JNIEnv *env, jobject object, jbyteArray bytes)
+//jboolean JNICALL nextRandBytes___3B
+jboolean JNICALL nextRandBytes(JNIEnv *env, jobject object, jbyteArray bytes)
 {
   if (NULL == bytes) {
     THROW(env, "java/lang/NullPointerException", "Buffer cannot be null.");
@@ -179,7 +182,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_spark_crypto_random_OpensslSecureRand
   int b_len = (*env)->GetArrayLength(env, bytes);
   int ret = openssl_rand_bytes((unsigned char *)b, b_len);
   (*env)->ReleaseByteArrayElements(env, bytes, b, 0);
-  
+
   if (1 != ret) {
     return JNI_FALSE;
   }
