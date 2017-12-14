@@ -2651,11 +2651,12 @@
 
 
     <profile>
-      <id>hadoop-3.1.0-SNAPSHOT</id>
+      <id>hadoop-3.0.1-beta1</id>
       <properties>
-        <hadoop.version>3.1.0-SNAPSHOT</hadoop.version>
-        <curator.version>3.1.0-SNAPSHOT</curator.version>
+        <hadoop.version>3.0.0-beta1</hadoop.version>
+        <curator.version>3.0.0-beta1</curator.version>
       </properties>
+   </profile>
 
     <profile>
       <id>yarn</id>
