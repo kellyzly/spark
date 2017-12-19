@@ -2650,13 +2650,13 @@
     </profile>
 
 
-    <profile>
-      <id>hadoop-3.0.1-beta1</id>
+    <!--<profile>
+      <id>hadoop-3.0.0-beta1</id>
       <properties>
         <hadoop.version>3.0.0-beta1</hadoop.version>
-        <curator.version>3.0.0-beta1</curator.version>
+        <curator.version>2.12.0</curator.version>
       </properties>
-   </profile>
+   </profile> -->
 
     <profile>
       <id>yarn</id>
